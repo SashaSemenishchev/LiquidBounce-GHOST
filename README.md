@@ -1,6 +1,9 @@
 # LiquidBounce
 A free mixin-based injection hacked-client for Minecraft using Minecraft Forge, supporting version 1.8.9
 
+This fork is Ghost-oriented, aimed to create Vape V4-like experience.
+WIP
+
 Website: https://liquidbounce.net \
 Forum: https://forums.ccbluex.net \
 Guilded: https://www.guilded.gg/CCBlueX \
