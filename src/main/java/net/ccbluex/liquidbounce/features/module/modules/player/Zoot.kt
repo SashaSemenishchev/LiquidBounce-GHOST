@@ -20,6 +20,8 @@ object Zoot : Module("Zoot", ModuleCategory.PLAYER) {
     private val fire by BoolValue("Fire", true)
     private val noAir by BoolValue("NoAir", false)
 
+    override val isDangerous: Boolean = true
+
     @EventTarget
     fun onUpdate(event: UpdateEvent) {
         val thePlayer = mc.thePlayer ?: return

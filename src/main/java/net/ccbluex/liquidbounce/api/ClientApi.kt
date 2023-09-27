@@ -28,7 +28,7 @@ object ClientApi {
 
     fun requestNewestBuildEndpoint(branch: String = HARD_CODED_BRANCH, release: Boolean = false) = endpointRequest<Build>("version/newest/$branch${if (release) "/release" else "" }")
 
-    fun requestMessageOfTheDayEndpoint(branch: String = HARD_CODED_BRANCH) = endpointRequest<MessageOfTheDay>("client/$branch/motd")
+//    fun requestMessageOfTheDayEndpoint(branch: String = HARD_CODED_BRANCH) = endpointRequest<MessageOfTheDay>("client/$branch/motd")
 
 
     fun requestSettingsList(branch: String = HARD_CODED_BRANCH) = endpointRequest<Array<AutoSettings>>("client/$branch/settings")

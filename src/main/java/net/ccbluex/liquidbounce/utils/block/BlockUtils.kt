@@ -141,4 +141,18 @@ object BlockUtils : MinecraftInstance() {
         return false
     }
 
+    fun getBlockByStr(block: String): Block? {
+        return try {
+            Block.getBlockById(block.toInt())
+        } catch (exception: NumberFormatException) {
+            val tmpBlock = Block.getBlockFromName(block)
+
+            if (tmpBlock == null || Block.getIdFromBlock(tmpBlock) <= 0) {
+                return null
+            }
+
+            tmpBlock
+        }
+    }
+
 }

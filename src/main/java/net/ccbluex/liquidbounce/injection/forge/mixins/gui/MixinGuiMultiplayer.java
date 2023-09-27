@@ -5,6 +5,7 @@
  */
 package net.ccbluex.liquidbounce.injection.forge.mixins.gui;
 
+import net.ccbluex.liquidbounce.LiquidBounce;
 import net.ccbluex.liquidbounce.features.special.BungeeCordSpoof;
 import net.ccbluex.liquidbounce.file.FileManager;
 import net.ccbluex.liquidbounce.ui.client.GuiClientFixes;
@@ -26,6 +27,7 @@ public abstract class MixinGuiMultiplayer extends MixinGuiScreen {
 
     @Inject(method = "initGui", at = @At("RETURN"))
     private void initGui(CallbackInfo callbackInfo) {
+        if(LiquidBounce.INSTANCE.isLocked()) return;
         buttonList.add(new GuiButton(997, 5, 8, 45, 20, "Fixes"));
         buttonList.add(bungeeCordSpoofButton = new GuiButton(998, 55, 8, 98, 20, "BungeeCord Spoof: " + (BungeeCordSpoof.INSTANCE.getEnabled() ? "On" : "Off")));
         buttonList.add(new GuiButton(999, width - 104, 8, 98, 20, "Tools"));

@@ -210,6 +210,21 @@ object RotationUtils : MinecraftInstance(), Listenable {
         (bb.minX + bb.maxX) * 0.5, (bb.minY + bb.maxY) * 0.5, (bb.minZ + bb.maxZ) * 0.5
     )
 
+    fun getCenter(bb: AxisAlignedBB, xModifier: Double, yModifier: Double, zModifier: Double) = Vec3(
+        (bb.minX + bb.maxX) * xModifier, (bb.minY + bb.maxY) * yModifier, (bb.minZ + bb.maxZ) * zModifier
+    )
+
+    fun fovFromEntity(entity: Entity): Double {
+        return ((mc.thePlayer.rotationYaw - fovToEntity(entity)).toDouble() % 360.0 + 540.0) % 360.0 - 180.0
+    }
+
+    fun fovToEntity(entity: Entity): Float {
+        val x: Double = entity.posX - mc.thePlayer.posX
+        val z: Double = entity.posZ - mc.thePlayer.posZ
+        val yaw = atan2(x, z) * 57.2957795
+        return (yaw * -1.0).toFloat()
+    }
+
     /**
      * Search good center
      *

@@ -23,7 +23,7 @@ import net.minecraft.util.EnumFacing
 object FastBow : Module("FastBow", ModuleCategory.COMBAT) {
 
     private val packets by IntegerValue("Packets", 20, 3..20)
-
+    override val isDangerous: Boolean = true
     @EventTarget
     fun onUpdate(event: UpdateEvent) {
         val thePlayer = mc.thePlayer ?: return

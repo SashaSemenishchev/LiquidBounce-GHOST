@@ -4,6 +4,7 @@ import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.shader.Framebuffer;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
+import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.EXTPackedDepthStencil;
 
 import java.awt.*;

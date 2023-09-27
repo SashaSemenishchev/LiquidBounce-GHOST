@@ -37,6 +37,8 @@ import org.lwjgl.input.Keyboard
 import java.awt.Color
 
 object Fly : Module("Fly", ModuleCategory.MOVEMENT, Keyboard.KEY_F) {
+    override val isDangerous: Boolean
+        get() = true
     private val flyModes = arrayOf(
         Vanilla, SmoothVanilla,
 

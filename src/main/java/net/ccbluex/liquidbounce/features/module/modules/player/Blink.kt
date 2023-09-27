@@ -35,6 +35,7 @@ object Blink : Module("Blink", ModuleCategory.PLAYER) {
     private val pulse by BoolValue("Pulse", false)
     private val pulseDelay by IntegerValue("PulseDelay", 1000, 500..5000) { pulse }
     private val pulseTimer = MSTimer()
+    override val isDangerous: Boolean = true
 
     override fun onEnable() {
         pulseTimer.reset()

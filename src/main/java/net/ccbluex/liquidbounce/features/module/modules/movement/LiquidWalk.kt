@@ -28,7 +28,7 @@ object LiquidWalk : Module("LiquidWalk", ModuleCategory.MOVEMENT, Keyboard.KEY_J
     private val aacFly by FloatValue("AACFlyMotion", 0.5f, 0.1f..1f) { mode == "AACFly" }
 
     private var nextTick = false
-
+    override val isDangerous: Boolean = true
     @EventTarget
     fun onUpdate(event: UpdateEvent) {
         val thePlayer = mc.thePlayer

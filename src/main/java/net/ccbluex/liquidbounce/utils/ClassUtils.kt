@@ -12,10 +12,11 @@ object ClassUtils {
     /**
      * Allows you to check for existing classes with the [className]
      */
-    fun hasClass(className: String) =
-        if (className in cachedClasses)
-            cachedClasses[className]!!
-        else try {
+    fun hasClass(className: String): Boolean {
+        val cached = cachedClasses[className]
+        if (cached != null)
+            return cached
+        return try {
             Class.forName(className)
             cachedClasses[className] = true
 
@@ -25,6 +26,7 @@ object ClassUtils {
 
             false
         }
+}
 
     fun hasForge() = hasClass("net.minecraftforge.common.MinecraftForge")
 

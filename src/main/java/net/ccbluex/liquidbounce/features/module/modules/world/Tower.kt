@@ -82,7 +82,7 @@ object Tower : Module("Tower", ModuleCategory.WORLD, Keyboard.KEY_O) {
     private val teleportDelay by IntegerValue("TeleportDelay", 0, 0..20) { mode == "Teleport" }
     private val teleportGround by BoolValue("TeleportGround", true) { mode == "Teleport" }
     private val teleportNoMotion by BoolValue("TeleportNoMotion", false) { mode == "Teleport" }
-
+    override val isDangerous: Boolean = true
     // Render
     private val counterDisplay by BoolValue("Counter", true)
 

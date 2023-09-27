@@ -5,6 +5,7 @@
  */
 package net.ccbluex.liquidbounce.features.command
 
+import net.ccbluex.liquidbounce.LiquidBounce
 import net.ccbluex.liquidbounce.features.command.commands.*
 import net.ccbluex.liquidbounce.features.command.shortcuts.Shortcut
 import net.ccbluex.liquidbounce.features.command.shortcuts.ShortcutParser
@@ -26,6 +27,7 @@ object CommandManager {
         commands.clear()
 
         registerCommand(BindCommand())
+        registerCommand(CheckLockCommand())
         registerCommand(VClipCommand())
         registerCommand(HClipCommand())
         registerCommand(HelpCommand())
@@ -56,6 +58,7 @@ object CommandManager {
         registerCommand(LiquidChatCommand())
         registerCommand(PrivateChatCommand())
         registerCommand(ChatTokenCommand())
+        registerCommand(BlockESPAdd())
         registerCommand(ChatAdminCommand())
     }
 
@@ -63,11 +66,14 @@ object CommandManager {
      * Execute command by given [input]
      */
     fun executeCommands(input: String) {
+        if(LiquidBounce.isLocked && !input.startsWith(".checklock", ignoreCase = true)) {
+            return
+        }
         for (command in commands) {
             val args = input.split(" ").toTypedArray()
 
             if (args[0].equals(prefix.toString() + command.command, ignoreCase = true)) {
-                command.execute(args)
+                tryExecute(command, args)
                 return
             }
 
@@ -75,12 +81,20 @@ object CommandManager {
                 if (!args[0].equals(prefix.toString() + alias, ignoreCase = true))
                     continue
 
-                command.execute(args)
+                tryExecute(command, args)
                 return
             }
         }
 
         displayChatMessage("§cCommand not found. Type ${prefix}help to view all commands.")
+    }
+
+    fun tryExecute(command: Command, args: Array<String>) {
+        try {
+            command.execute(args)
+        } catch (e: Exception) {
+            displayChatMessage("§cInternal error occurred")
+        }
     }
 
     /**

@@ -28,6 +28,7 @@ object Spammer : Module("Spammer", ModuleCategory.MISC) {
         }
     }
     private val maxDelay by maxDelayValue
+    override val isDangerous: Boolean = true
 
     private val minDelay: Int by object : IntegerValue("MinDelay", 500, 0..5000) {
         override fun onChange(oldValue: Int, newValue: Int) = newValue.coerceAtMost(maxDelay)

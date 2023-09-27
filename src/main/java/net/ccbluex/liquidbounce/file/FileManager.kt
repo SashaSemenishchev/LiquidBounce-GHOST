@@ -31,6 +31,7 @@ object FileManager : MinecraftInstance() {
     val accountsConfig = AccountsConfig(File(dir, "accounts.json"))
     val friendsConfig = FriendsConfig(File(dir, "friends.json"))
     val xrayConfig = XRayConfig(File(dir, "xray-blocks.json"))
+    val blockEspConfig = BlockESPConfig(File(dir, "blockesp.json"))
     val hudConfig = HudConfig(File(dir, "hud.json"))
     val shortcutsConfig = ShortcutsConfig(File(dir, "shortcuts.json"))
     val backgroundImageFile = File(dir, "userbackground.png")

@@ -42,6 +42,7 @@ public class AutoArmor extends Module {
     }
 
     public static final ArmorComparator ARMOR_COMPARATOR = new ArmorComparator();
+
     private final IntegerValue maxTicksValue = new IntegerValue("MaxTicks", 4, 0, 10) {
         @Override
         protected Integer onChange(final Integer oldValue, final Integer newValue) {
@@ -90,6 +91,11 @@ public class AutoArmor extends Module {
     private boolean switchBack = false;
 
     private boolean locked = false;
+
+    @Override
+    public boolean isDangerous() {
+        return true;
+    }
 
     @EventTarget
     public void onTick(final TickEvent event) {

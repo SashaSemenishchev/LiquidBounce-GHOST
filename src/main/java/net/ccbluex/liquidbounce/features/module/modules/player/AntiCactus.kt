@@ -13,7 +13,7 @@ import net.minecraft.block.BlockCactus
 import net.minecraft.util.AxisAlignedBB
 
 object AntiCactus : Module("AntiCactus", ModuleCategory.PLAYER) {
-
+    override val isDangerous: Boolean = true
     @EventTarget
     fun onBlockBB(event: BlockBBEvent) {
         if (event.block is BlockCactus)

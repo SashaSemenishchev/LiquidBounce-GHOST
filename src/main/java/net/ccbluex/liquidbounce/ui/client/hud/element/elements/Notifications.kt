@@ -6,6 +6,9 @@
 package net.ccbluex.liquidbounce.ui.client.hud.element.elements
 
 
+import net.ccbluex.liquidbounce.LiquidBounce
+import net.ccbluex.liquidbounce.features.module.modules.misc.RenderHider
+import net.ccbluex.liquidbounce.features.module.modules.misc.Spectator
 import net.ccbluex.liquidbounce.ui.client.hud.HUD
 import net.ccbluex.liquidbounce.ui.client.hud.HUD.addNotification
 import net.ccbluex.liquidbounce.ui.client.hud.designer.GuiHudDesigner
@@ -17,6 +20,8 @@ import net.ccbluex.liquidbounce.ui.font.Fonts
 import net.ccbluex.liquidbounce.utils.render.AnimationUtils
 import net.ccbluex.liquidbounce.utils.render.RenderUtils.deltaTime
 import net.ccbluex.liquidbounce.utils.render.RenderUtils.drawRect
+import net.ccbluex.liquidbounce.utils.timer.MSTimer
+import org.apache.commons.lang3.time.StopWatch
 import org.lwjgl.opengl.GL11.glColor4f
 import java.awt.Color
 
@@ -30,7 +35,7 @@ class Notifications(x: Double = 0.0, y: Double = 30.0, scale: Float = 1F,
     /**
      * Example notification for CustomHUD designer
      */
-    private val exampleNotification = Notification("Example Notification")
+    private val exampleNotification = Notification("Example Notification", true)
 
     /**
      * Draw element
@@ -53,12 +58,13 @@ class Notifications(x: Double = 0.0, y: Double = 30.0, scale: Float = 1F,
 
 }
 
-class Notification(private val message: String) {
+class Notification(val message: String, private val okToShowWhenLocked: Boolean=false, val color: Color=LiquidBounce.color) {
     var x = 0F
     var textLength = 0
 
     private var stay = 0F
     private var fadeStep = 0F
+    val delegatedTimeSpent = MSTimer()
     var fadeState = FadeState.IN
 
     /**
@@ -75,8 +81,17 @@ class Notification(private val message: String) {
      */
     fun drawNotification() {
         // Draw notification
+        val spectator = Spectator
+        if(spectator.state) {
+            spectator.log(message)
+        }
+        if(!okToShowWhenLocked && LiquidBounce.isLocked) {
+            HUD.removeNotification(this)
+            RenderHider.delegateNotification(this)
+            return
+        }
         drawRect(-x + 8 + textLength, 0F, -x, -20F, Color.BLACK.rgb)
-        drawRect(-x, 0F, -x - 5, -20F, Color(0, 160, 255).rgb)
+        drawRect(-x, 0F, -x - 5, -20F, color.rgb)
         Fonts.font35.drawString(message, -x + 4, -14F, Int.MAX_VALUE)
         glColor4f(1f, 1f, 1f, 1f)
 

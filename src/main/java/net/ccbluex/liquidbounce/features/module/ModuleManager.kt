@@ -28,6 +28,8 @@ import java.util.*
 object ModuleManager : Listenable {
 
     val modules = TreeSet<Module> { module1, module2 -> module1.name.compareTo(module2.name) }
+    val renderModules = hashSetOf<Module>()
+    val dangerousModules = hashSetOf<Module>()
     private val moduleClassMap = hashMapOf<Class<*>, Module>()
 
     init {
@@ -54,7 +56,9 @@ object ModuleManager : Listenable {
         registerModules(
             AbortBreaking,
             Aimbot,
+//            AimAssist,
             AirJump,
+            DangerousModBlocker,
             AirLadder,
             Ambience,
             Animations,
@@ -77,6 +81,7 @@ object ModuleManager : Listenable {
             AutoRod,
             AutoSoup,
             AutoTool,
+            RenderHider,
             AutoWalk,
             AutoWeapon,
             AvoidHazards,
@@ -180,6 +185,7 @@ object ModuleManager : Listenable {
             SlimeJump,
             Sneak,
             Spammer,
+            Spectator,
             Speed,
             Sprint,
             Step,
@@ -202,7 +208,7 @@ object ModuleManager : Listenable {
             Zoot
         )
 
-        LOGGER.info("[ModuleManager] Loaded ${modules.size} modules.")
+//        LOGGER.info("[ModuleManager] Loaded ${modules.size} modules.")
     }
 
     /**
@@ -214,6 +220,8 @@ object ModuleManager : Listenable {
 
         generateCommand(module)
         registerListener(module)
+        if(module.isRenderDangerous) renderModules.add(module)
+        if(module.isDangerous) dangerousModules.add(module)
     }
 
     /**

@@ -35,6 +35,8 @@ object NoFall : Module("NoFall", ModuleCategory.PLAYER) {
         Hypixel
     )
 
+    override val isDangerous: Boolean = true
+
     private val modes = noFallModes.map { it.modeName }.toTypedArray()
 
     val mode by ListValue("Mode", modes, "SpoofGround")

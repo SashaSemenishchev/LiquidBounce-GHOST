@@ -5,6 +5,7 @@
  */
 package net.ccbluex.liquidbounce.features.module.modules.combat
 
+import apple.laf.JRSUIConstants.BooleanValue
 import net.ccbluex.liquidbounce.event.EventState
 import net.ccbluex.liquidbounce.event.EventTarget
 import net.ccbluex.liquidbounce.event.MotionEvent
@@ -21,6 +22,8 @@ import net.ccbluex.liquidbounce.utils.extensions.*
 import net.ccbluex.liquidbounce.utils.timer.MSTimer
 import net.ccbluex.liquidbounce.value.BoolValue
 import net.ccbluex.liquidbounce.value.FloatValue
+import net.ccbluex.liquidbounce.value.IntegerValue
+import net.minecraft.util.MovingObjectPosition
 import java.util.*
 
 object Aimbot : Module("Aimbot", ModuleCategory.COMBAT) {
@@ -28,6 +31,7 @@ object Aimbot : Module("Aimbot", ModuleCategory.COMBAT) {
     private val range by FloatValue("Range", 4.4F, 1F..8F)
     private val turnSpeed by FloatValue("TurnSpeed", 10f, 1F..180F)
     private val inViewTurnSpeed by FloatValue("InViewTurnSpeed", 35f, 1f..180f)
+    private val keepRotating by IntegerValue("KeepRotatingAfter", 250, 100..1000)
     private val fov by FloatValue("FOV", 180F, 1F..180F)
     private val center by BoolValue("Center", false)
     private val lock by BoolValue("Lock", true)
@@ -45,7 +49,7 @@ object Aimbot : Module("Aimbot", ModuleCategory.COMBAT) {
         // Clicking delay
         if (mc.gameSettings.keyBindAttack.isKeyDown) clickTimer.reset()
 
-        if (onClick && clickTimer.hasTimePassed(500)) return
+        if (onClick && clickTimer.hasTimePassed(keepRotating)) return
 
         // Search for the best enemy to target
 
@@ -58,7 +62,7 @@ object Aimbot : Module("Aimbot", ModuleCategory.COMBAT) {
         }.minByOrNull { getRotationDifference(it) } ?: return
 
         // Should it always keep trying to lock on the enemy or just try to assist you?
-        if (!lock && isFaced(entity, range.toDouble())) return
+        if (!lock && (mc.objectMouseOver.typeOfHit == MovingObjectPosition.MovingObjectType.ENTITY || isFaced(entity, range.toDouble()))) return
 
         // Look up required rotations to hit enemy
         val boundingBox = entity.hitBox

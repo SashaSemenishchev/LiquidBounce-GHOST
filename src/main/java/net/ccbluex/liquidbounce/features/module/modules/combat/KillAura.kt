@@ -71,7 +71,8 @@ object KillAura : Module("KillAura", ModuleCategory.COMBAT, Keyboard.KEY_R) {
     /**
      * OPTIONS
      */
-
+    override val isDangerous: Boolean
+        get() = true
     private val simulateCooldown by BoolValue("SimulateCooldown", false)
 
     // CPS - Attack speed

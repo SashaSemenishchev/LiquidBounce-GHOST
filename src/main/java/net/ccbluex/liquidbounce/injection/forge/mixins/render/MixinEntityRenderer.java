@@ -6,9 +6,11 @@
 package net.ccbluex.liquidbounce.injection.forge.mixins.render;
 
 import com.google.common.base.Predicates;
+import me.mrunny.RenderHiderWindow;
 import net.ccbluex.liquidbounce.event.EventManager;
 import net.ccbluex.liquidbounce.event.Render3DEvent;
 import net.ccbluex.liquidbounce.features.module.modules.combat.Backtrack;
+import net.ccbluex.liquidbounce.features.module.modules.misc.RenderHider;
 import net.ccbluex.liquidbounce.features.module.modules.player.Reach;
 import net.ccbluex.liquidbounce.features.module.modules.render.CameraClip;
 import net.ccbluex.liquidbounce.features.module.modules.render.NoHurtCam;
@@ -18,15 +20,21 @@ import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ActiveRenderInfo;
 import net.minecraft.client.renderer.EntityRenderer;
+import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.client.renderer.entity.Render;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.item.EntityItemFrame;
 import net.minecraft.entity.passive.EntityAnimal;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.*;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
+import org.lwjgl.opengl.Display;
+import org.lwjgl.opengl.GL11;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -34,11 +42,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-
 import static net.minecraft.client.renderer.GlStateManager.rotate;
 import static net.minecraft.client.renderer.GlStateManager.translate;
-import static org.lwjgl.opengl.GL11.glPopMatrix;
-import static org.lwjgl.opengl.GL11.glPushMatrix;
+import static org.lwjgl.opengl.GL11.*;
 
 @Mixin(EntityRenderer.class)
 @SideOnly(Side.CLIENT)
@@ -61,8 +67,41 @@ public abstract class MixinEntityRenderer {
 
     @Inject(method = "renderWorldPass", at = @At(value = "FIELD", target = "Lnet/minecraft/client/renderer/EntityRenderer;renderHand:Z", shift = At.Shift.BEFORE))
     private void renderWorldPass(int pass, float partialTicks, long finishTimeNano, CallbackInfo callbackInfo) {
+//        if(RenderHider.INSTANCE.getState() && mc.currentScreen != null) return;
+        RenderHider hider = RenderHider.INSTANCE;
+        if(hider.getState()) hider.clearWindow();
         EventManager.INSTANCE.callEvent(new Render3DEvent(partialTicks));
     }
+
+//    @Inject(method = "updateCameraAndRender", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/GuiIngame;renderGameOverlay(F)V", shift = At.Shift.AFTER))
+//    public void hookCheatRendererAfterOverlay(float partialTicks, long p_updateCameraAndRender_2_, CallbackInfo ci) {
+//        if(!RenderHider.INSTANCE.getState()) return;
+//        if(mc.currentScreen != null) return;
+//        try {
+//            RenderHiderWindow window = RenderHider.INSTANCE.getWindow();
+//            if(window == null) return;
+//            if(!window.isVisible()) {
+//                window.drawAgain();
+//            }
+//        } catch(Exception e) {
+//            e.printStackTrace();
+//        }
+//    }
+//
+//    @Inject(method = "updateCameraAndRender", at = @At(value = "RETURN"))
+//    public void hookCheatRendererAtReturn(float partialTicks, long p_updateCameraAndRender_2_, CallbackInfo ci) {
+//        if(!RenderHider.INSTANCE.getState()) return;
+//        if(mc.currentScreen == null) return;
+//        try {
+//            RenderHiderWindow window = RenderHider.INSTANCE.getWindow();
+//            if(window == null) return;
+//            if(window.isVisible()) {
+//                window.unDraw();
+//            }
+//        } catch(Exception e) {
+//            e.printStackTrace();
+//        }
+//    }
 
     @Inject(method = "hurtCameraEffect", at = @At("HEAD"), cancellable = true)
     private void injectHurtCameraEffect(CallbackInfo callbackInfo) {
@@ -151,6 +190,9 @@ public abstract class MixinEntityRenderer {
         }
     }
 
+    @Unique
+    private static final Float LEGIT_REACH = 3F;
+
     /**
      * @author CCBlueX
      */
@@ -229,7 +271,20 @@ public abstract class MixinEntityRenderer {
                 }
             }
 
-            if (pointedEntity != null && flag && vec3.distanceTo(vec33) > (reach.getState() ? reach.getCombatReach() : 3)) {
+            float reachVal = -1;
+            boolean fairplay = reach.getFairplay();
+            checker: if(reach.getState()) {
+                if(!fairplay) {
+                    reachVal = reach.getCombatReach();
+                    break checker;
+                }
+                if(pointedEntity == null || !(pointedEntity instanceof EntityPlayer)) break checker;
+                reachVal = reach.getFairplayValues().getOrDefault(pointedEntity.getUniqueID(), LEGIT_REACH) + reach.getFairplayReachAddition();
+            }
+            if(reachVal < 3) {
+                reachVal = reach.getState() && fairplay ? reach.getCombatReach() : 3;
+            }
+            if (pointedEntity != null && flag && vec3.distanceTo(vec33) > reachVal) {
                 pointedEntity = null;
                 mc.objectMouseOver = new MovingObjectPosition(MovingObjectPosition.MovingObjectType.MISS, Objects.requireNonNull(vec33), null, new BlockPos(vec33));
             }

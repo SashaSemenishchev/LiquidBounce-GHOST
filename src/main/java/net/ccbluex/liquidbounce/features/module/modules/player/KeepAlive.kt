@@ -22,6 +22,8 @@ object KeepAlive : Module("KeepAlive", ModuleCategory.PLAYER) {
 
     private var runOnce = false
 
+    override val isDangerous: Boolean = true
+
     @EventTarget
     fun onMotion(event: MotionEvent) {
         val thePlayer = mc.thePlayer ?: return

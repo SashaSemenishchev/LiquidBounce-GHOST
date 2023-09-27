@@ -5,12 +5,16 @@
  */
 package net.ccbluex.liquidbounce.features.module.modules.render
 
+import me.mrunny.RenderHiderWindow
+import me.mrunny.Vec2i
 import net.ccbluex.liquidbounce.event.EventTarget
 import net.ccbluex.liquidbounce.event.Render2DEvent
 import net.ccbluex.liquidbounce.event.Render3DEvent
 import net.ccbluex.liquidbounce.features.module.Module
 import net.ccbluex.liquidbounce.features.module.ModuleCategory
 import net.ccbluex.liquidbounce.features.module.modules.misc.AntiBot.isBot
+import net.ccbluex.liquidbounce.features.module.modules.misc.RenderHider
+import net.ccbluex.liquidbounce.ui.client.hud.HUD
 import net.ccbluex.liquidbounce.ui.font.GameFontRenderer.Companion.getColorIndex
 import net.ccbluex.liquidbounce.utils.ClientUtils.LOGGER
 import net.ccbluex.liquidbounce.utils.EntityUtils.isSelected
@@ -31,23 +35,27 @@ import net.minecraft.entity.Entity
 import net.minecraft.entity.EntityLivingBase
 import net.minecraft.entity.player.EntityPlayer
 import org.lwjgl.opengl.GL11.*
+import org.lwjgl.util.vector.Matrix4f
+import org.lwjgl.util.vector.Vector2f
 import org.lwjgl.util.vector.Vector3f
 import java.awt.Color
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.roundToInt
+
 
 object ESP : Module("ESP", ModuleCategory.RENDER) {
 
     val mode by ListValue(
         "Mode",
-        arrayOf("Box", "OtherBox", "WireFrame", "2D", "Real2D", "Outline", "Glow"),
+        arrayOf("Box", "OtherBox", "WireFrame", "2D", "Real2D", "RenderHider", "Outline", "Glow"),
         "Box"
     )
 
     val outlineWidth by FloatValue("Outline-Width", 3f, 0.5f..5f) { mode == "Outline" }
 
     val wireframeWidth by FloatValue("WireFrame-Width", 2f, 0.5f..5f) { mode == "WireFrame" }
-
+    const val TOOLTIP_BEGIN = 23
     private val glowRenderScale by FloatValue("Glow-Renderscale", 1f, 0.1f..2f) { mode == "Glow" }
     private val glowRadius by IntegerValue("Glow-Radius", 4, 1..5) { mode == "Glow" }
     private val glowFade by IntegerValue("Glow-Fade", 10, 0..30) { mode == "Glow" }
@@ -60,16 +68,17 @@ object ESP : Module("ESP", ModuleCategory.RENDER) {
 
     private val colorTeam by BoolValue("Team", false)
     private val bot by BoolValue("Bots", true)
+    override val isRenderDangerous: Boolean
+        get() = true
+//    val buff = BufferUtils.createByteBuffer(3)
 
     var renderNameTags = true
-
     @EventTarget
     fun onRender3D(event: Render3DEvent) {
         val mode = mode
         val mvMatrix = WorldToScreen.getMatrix(GL_MODELVIEW_MATRIX)
         val projectionMatrix = WorldToScreen.getMatrix(GL_PROJECTION_MATRIX)
         val real2d = mode == "Real2D"
-
         if (real2d) {
             glPushAttrib(GL_ENABLE_BIT)
             glEnable(GL_BLEND)
@@ -107,48 +116,39 @@ object ESP : Module("ESP", ModuleCategory.RENDER) {
                             entity.lastTickPosZ + (entity.posZ - entity.lastTickPosZ) * timer.renderPartialTicks - renderManager.renderPosZ
                         draw2D(entity, posX, posY, posZ, color.rgb, Color.BLACK.rgb)
                     }
-                    "real2d" -> {
-                        val renderManager = mc.renderManager
-                        val timer = mc.timer
-                        val bb = entity.hitBox
-                            .offset(-entity.posX, -entity.posY, -entity.posZ)
-                            .offset(
-                                entity.lastTickPosX + (entity.posX - entity.lastTickPosX) * timer.renderPartialTicks,
-                                entity.lastTickPosY + (entity.posY - entity.lastTickPosY) * timer.renderPartialTicks,
-                                entity.lastTickPosZ + (entity.posZ - entity.lastTickPosZ) * timer.renderPartialTicks
-                            )
-                            .offset(-renderManager.renderPosX, -renderManager.renderPosY, -renderManager.renderPosZ)
-                        val boxVertices = arrayOf(
-                            doubleArrayOf(bb.minX, bb.minY, bb.minZ),
-                            doubleArrayOf(bb.minX, bb.maxY, bb.minZ),
-                            doubleArrayOf(bb.maxX, bb.maxY, bb.minZ),
-                            doubleArrayOf(bb.maxX, bb.minY, bb.minZ),
-                            doubleArrayOf(bb.minX, bb.minY, bb.maxZ),
-                            doubleArrayOf(bb.minX, bb.maxY, bb.maxZ),
-                            doubleArrayOf(bb.maxX, bb.maxY, bb.maxZ),
-                            doubleArrayOf(bb.maxX, bb.minY, bb.maxZ)
-                        )
-                        var minX = Float.MAX_VALUE
-                        var minY = Float.MAX_VALUE
-                        var maxX = -1f
-                        var maxY = -1f
-                        for (boxVertex in boxVertices) {
-                            val screenPos = WorldToScreen.worldToScreen(
-                                Vector3f(
-                                    boxVertex[0].toFloat(),
-                                    boxVertex[1].toFloat(),
-                                    boxVertex[2].toFloat()
-                                ), mvMatrix, projectionMatrix, mc.displayWidth, mc.displayHeight
-                            )
-                                ?: continue
-                            minX = min(screenPos.x, minX)
-                            minY = min(screenPos.y, minY)
-                            maxX = max(screenPos.x, maxX)
-                            maxY = max(screenPos.y, maxY)
+                    "renderhider" -> {
+                        val vertexes = findVertexes(entity, mvMatrix, projectionMatrix)
+                        val min = vertexes.first
+                        val max = vertexes.second
+                        val minX = min.x.toInt()
+                        val minY = min.y.toInt()
+                        val maxX = max.x.toInt()
+                        val maxY = max.y.toInt()
+
+                        if (minX > 0 || minY > 0 || maxX <= mc.displayWidth || maxY <= mc.displayWidth) {
+                            RenderHider.window?.let {
+                                val graphics = it.graphics ?: return@let
+                                graphics.color = Color.WHITE
+                                graphics.drawLine(minX, minY, minX, maxY)
+                                graphics.drawLine(maxX, maxY, maxX, minY)
+                                graphics.drawLine(minX, maxY, maxX, maxY)
+                                graphics.drawLine(minX, minY, maxX, minY)
+                            }
                         }
+                    }
+                    "real2d" -> {
+                        val vertexes = findVertexes(entity, mvMatrix, projectionMatrix)
+                        val min = vertexes.first
+                        val max = vertexes.second
+                        val minX = min.x
+                        val minY = min.y
+                        val maxX = max.x
+                        val maxY = max.y
+
                         if (minX > 0 || minY > 0 || maxX <= mc.displayWidth || maxY <= mc.displayWidth) {
                             glColor4f(color.red / 255f, color.green / 255f, color.blue / 255f, 1f)
                             glBegin(GL_LINE_LOOP)
+
                             glVertex2f(minX, minY)
                             glVertex2f(minX, maxY)
                             glVertex2f(maxX, maxY)
@@ -169,6 +169,54 @@ object ESP : Module("ESP", ModuleCategory.RENDER) {
             glPopMatrix()
             glPopAttrib()
         }
+    }
+
+    private fun findVertexes(
+        entity: Entity,
+        mvMatrix: Matrix4f,
+        projectionMatrix: Matrix4f
+    ): Pair<Vector2f, Vector2f> {
+        val renderManager = mc.renderManager
+        val timer = mc.timer
+        val bb = entity.hitBox
+            .offset(-entity.posX, -entity.posY, -entity.posZ)
+            .offset(
+                entity.lastTickPosX + (entity.posX - entity.lastTickPosX) * timer.renderPartialTicks,
+                entity.lastTickPosY + (entity.posY - entity.lastTickPosY) * timer.renderPartialTicks,
+                entity.lastTickPosZ + (entity.posZ - entity.lastTickPosZ) * timer.renderPartialTicks
+            )
+            .offset(-renderManager.renderPosX, -renderManager.renderPosY, -renderManager.renderPosZ)
+        val boxVertices = arrayOf(
+            doubleArrayOf(bb.minX, bb.minY, bb.minZ),
+            doubleArrayOf(bb.minX, bb.maxY, bb.minZ),
+            doubleArrayOf(bb.maxX, bb.maxY, bb.minZ),
+            doubleArrayOf(bb.maxX, bb.minY, bb.minZ),
+            doubleArrayOf(bb.minX, bb.minY, bb.maxZ),
+            doubleArrayOf(bb.minX, bb.maxY, bb.maxZ),
+            doubleArrayOf(bb.maxX, bb.maxY, bb.maxZ),
+            doubleArrayOf(bb.maxX, bb.minY, bb.maxZ)
+        )
+        var minX = Float.MAX_VALUE
+        var minY = Float.MAX_VALUE
+        var maxX = -1f
+        var maxY = -1f
+        for (boxVertex in boxVertices) {
+            val screenPos = WorldToScreen.worldToScreen(
+                Vector3f(
+                    boxVertex[0].toFloat(),
+                    boxVertex[1].toFloat(),
+                    boxVertex[2].toFloat()
+                ), mvMatrix, projectionMatrix, mc.displayWidth, mc.displayHeight
+            )
+                ?: continue
+            minX = min(screenPos.x, minX)
+            minY = min(screenPos.y, minY)
+            maxX = max(screenPos.x, maxX)
+            maxY = max(screenPos.y, maxY)
+
+        }
+
+        return Pair(Vector2f(minX, minY), Vector2f(maxX, maxY))
     }
 
     @EventTarget
@@ -241,5 +289,4 @@ object ESP : Module("ESP", ModuleCategory.RENDER) {
             colorBlue
         )
     }
-
 }

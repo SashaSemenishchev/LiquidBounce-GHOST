@@ -5,18 +5,18 @@
  */
 package net.ccbluex.liquidbounce.injection.forge.mixins.client;
 
+import me.mrunny.RenderHiderWindow;
 import net.ccbluex.liquidbounce.LiquidBounce;
 import net.ccbluex.liquidbounce.api.ClientUpdate;
 import net.ccbluex.liquidbounce.event.*;
 import net.ccbluex.liquidbounce.features.module.modules.combat.AutoClicker;
 import net.ccbluex.liquidbounce.features.module.modules.exploit.AbortBreaking;
 import net.ccbluex.liquidbounce.features.module.modules.exploit.MultiActions;
+import net.ccbluex.liquidbounce.features.module.modules.misc.RenderHider;
 import net.ccbluex.liquidbounce.features.module.modules.world.FastPlace;
 import net.ccbluex.liquidbounce.file.FileManager;
 import net.ccbluex.liquidbounce.injection.forge.SplashProgressLock;
 import net.ccbluex.liquidbounce.ui.client.GuiClientConfiguration;
-import net.ccbluex.liquidbounce.ui.client.GuiMainMenu;
-import net.ccbluex.liquidbounce.ui.client.GuiUpdate;
 import net.ccbluex.liquidbounce.ui.client.GuiWelcome;
 import net.ccbluex.liquidbounce.utils.CPSCounter;
 import net.ccbluex.liquidbounce.utils.render.IconUtils;
@@ -26,6 +26,7 @@ import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
+import net.minecraft.client.gui.GuiMainMenu;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.multiplayer.PlayerControllerMP;
@@ -40,6 +41,7 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import org.lwjgl.Sys;
 import org.lwjgl.input.Keyboard;
+import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
@@ -129,21 +131,14 @@ public abstract class MixinMinecraft {
         if (FileManager.INSTANCE.getFirstStart()) {
             displayGuiScreen(new GuiWelcome());
         } else if (ClientUpdate.INSTANCE.hasUpdate()) {
-            displayGuiScreen(new GuiUpdate());
-        }
-    }
-
-    @Inject(method = "createDisplay", at = @At(value = "INVOKE", target = "Lorg/lwjgl/opengl/Display;setTitle(Ljava/lang/String;)V", shift = At.Shift.AFTER))
-    private void createDisplay(CallbackInfo callbackInfo) {
-        if (GuiClientConfiguration.Companion.getEnabledClientTitle()) {
-            Display.setTitle(LiquidBounce.INSTANCE.getClientTitle());
+            LiquidBounce.INSTANCE.info("A new update popped, yet no update for GHOST");
         }
     }
 
     @Inject(method = "displayGuiScreen", at = @At(value = "FIELD", target = "Lnet/minecraft/client/Minecraft;currentScreen:Lnet/minecraft/client/gui/GuiScreen;", shift = At.Shift.AFTER))
     private void handleDisplayGuiScreen(CallbackInfo callbackInfo) {
         if (currentScreen instanceof net.minecraft.client.gui.GuiMainMenu || (currentScreen != null && currentScreen.getClass().getName().startsWith("net.labymod") && currentScreen.getClass().getSimpleName().equals("ModGuiMainMenu"))) {
-            currentScreen = new GuiMainMenu();
+            currentScreen = LiquidBounce.INSTANCE.isLocked() ? new GuiMainMenu() : new net.ccbluex.liquidbounce.ui.client.GuiMainMenu();
 
             ScaledResolution scaledResolution = new ScaledResolution(mc);
             currentScreen.setWorldAndResolution(mc, scaledResolution.getScaledWidth(), scaledResolution.getScaledHeight());
@@ -151,6 +146,28 @@ public abstract class MixinMinecraft {
         }
 
         EventManager.INSTANCE.callEvent(new ScreenEvent(currentScreen));
+    }
+
+    @Inject(method = "setIngameFocus", at = @At(value = "HEAD"))
+    private void handleFocusOn(CallbackInfo callbackInfo) {
+        if(!RenderHider.INSTANCE.getState() || mc.theWorld == null) return;
+        RenderHiderWindow window = RenderHider.INSTANCE.getWindow();
+        if(window == null || window.isVisible()) {
+            return;
+        }
+        Mouse.setCursorPosition(Mouse.getX(), mc.displayHeight - 75);
+        window.drawAgain();
+    }
+
+    @Inject(method = "setIngameNotInFocus", at = @At(value = "HEAD"))
+    private void handleFocusOff(CallbackInfo callbackInfo) {
+        if(!RenderHider.INSTANCE.getState() || mc.theWorld == null) return;
+        RenderHiderWindow window = RenderHider.INSTANCE.getWindow();
+        if(window == null || !window.isVisible()) {
+            return;
+        }
+        window.unDraw();
+        Mouse.setCursorPosition(Mouse.getX(), Display.getY() / 2);
     }
 
     private long lastFrame = getTime();

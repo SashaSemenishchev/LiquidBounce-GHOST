@@ -228,6 +228,11 @@ public abstract class MixinEntityPlayerSP extends MixinAbstractClientPlayer {
         ci.cancel();
     }
 
+    @Inject(method = "attackEntityFrom", at = @At("RETURN"))
+    public void onAttack(DamageSource p_attackEntityFrom_1_, float p_attackEntityFrom_2_, CallbackInfoReturnable<Boolean> cir) {
+        EventManager.INSTANCE.callEvent(new DamageEvent(p_attackEntityFrom_1_, p_attackEntityFrom_2_));
+    }
+
     @Inject(method = "swingItem", at = @At("HEAD"), cancellable = true)
     private void swingItem(CallbackInfo callbackInfo) {
         final NoSwing noSwing = NoSwing.INSTANCE;

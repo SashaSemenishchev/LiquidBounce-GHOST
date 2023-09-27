@@ -56,7 +56,7 @@ import kotlin.math.*
 object Scaffold : Module("Scaffold", ModuleCategory.WORLD, Keyboard.KEY_I) {
 
     private val mode by ListValue("Mode", arrayOf("Normal", "Rewinside", "Expand", "GodBridge"), "Normal")
-
+    override val isDangerous: Boolean = true
     // Expand
     private val omniDirectionalExpand by BoolValue("OmniDirectionalExpand", false) { mode == "Expand" }
     private val expandLength by IntegerValue("ExpandLength", 1, 1..6) { mode == "Expand" }

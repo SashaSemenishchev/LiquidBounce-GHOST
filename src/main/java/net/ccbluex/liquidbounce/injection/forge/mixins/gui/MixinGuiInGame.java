@@ -22,6 +22,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import static net.ccbluex.liquidbounce.utils.MinecraftInstance.mc;
@@ -42,39 +43,39 @@ public abstract class MixinGuiInGame {
             callbackInfo.cancel();
     }
 
-    @Inject(method = "renderTooltip", at = @At("HEAD"), cancellable = true)
-    private void renderTooltip(ScaledResolution sr, float partialTicks, CallbackInfo callbackInfo) {
-        final HUD hud = HUD.INSTANCE;
-
-        if (mc.getRenderViewEntity() instanceof EntityPlayer && hud.getState() && hud.getBlackHotbar()) {
-            EntityPlayer entityPlayer = (EntityPlayer) mc.getRenderViewEntity();
-
-            int middleScreen = sr.getScaledWidth() / 2;
-
-            color(1f, 1f, 1f, 1f);
-            GuiIngame.drawRect(middleScreen - 91, sr.getScaledHeight() - 24, middleScreen + 90, sr.getScaledHeight(), Integer.MIN_VALUE);
-            GuiIngame.drawRect(middleScreen - 91 - 1 + entityPlayer.inventory.currentItem * 20 + 1, sr.getScaledHeight() - 24, middleScreen - 91 - 1 + entityPlayer.inventory.currentItem * 20 + 22, sr.getScaledHeight() - 22 - 1 + 24, Integer.MAX_VALUE);
-
-            enableRescaleNormal();
-            glEnable(GL_BLEND);
-            tryBlendFuncSeparate(770, 771, 1, 0);
-            RenderHelper.enableGUIStandardItemLighting();
-
-            for(int j = 0; j < 9; ++j) {
-                int k = sr.getScaledWidth() / 2 - 90 + j * 20 + 2;
-                int l = sr.getScaledHeight() - 16 - 3;
-                renderHotbarItem(j, k, l, partialTicks, entityPlayer);
-            }
-
-            RenderHelper.disableStandardItemLighting();
-            disableRescaleNormal();
-            disableBlend();
-
-            EventManager.INSTANCE.callEvent(new Render2DEvent(partialTicks));
-            AWTFontRenderer.Companion.garbageCollectionTick();
-            callbackInfo.cancel();
-        }
-    }
+//    @Inject(method = "renderTooltip", at = @At("HEAD"), cancellable = true)
+//    private void renderTooltip(ScaledResolution sr, float partialTicks, CallbackInfo callbackInfo) {
+//        final HUD hud = HUD.INSTANCE;
+//
+//        if (mc.getRenderViewEntity() instanceof EntityPlayer && hud.getState() && hud.getBlackHotbar()) {
+//            EntityPlayer entityPlayer = (EntityPlayer) mc.getRenderViewEntity();
+//
+//            int middleScreen = sr.getScaledWidth() / 2;
+//
+//            color(1f, 1f, 1f, 1f);
+//            GuiIngame.drawRect(middleScreen - 91, sr.getScaledHeight() - 24, middleScreen + 90, sr.getScaledHeight(), Integer.MIN_VALUE);
+//            GuiIngame.drawRect(middleScreen - 91 - 1 + entityPlayer.inventory.currentItem * 20 + 1, sr.getScaledHeight() - 24, middleScreen - 91 - 1 + entityPlayer.inventory.currentItem * 20 + 22, sr.getScaledHeight() - 22 - 1 + 24, Integer.MAX_VALUE);
+//
+//            enableRescaleNormal();
+//            glEnable(GL_BLEND);
+//            tryBlendFuncSeparate(770, 771, 1, 0);
+//            RenderHelper.enableGUIStandardItemLighting();
+//
+//            for(int j = 0; j < 9; ++j) {
+//                int k = sr.getScaledWidth() / 2 - 90 + j * 20 + 2;
+//                int l = sr.getScaledHeight() - 16 - 3;
+//                renderHotbarItem(j, k, l, partialTicks, entityPlayer);
+//            }
+//
+//            RenderHelper.disableStandardItemLighting();
+//            disableRescaleNormal();
+//            disableBlend();
+//
+//            EventManager.INSTANCE.callEvent(new Render2DEvent(partialTicks));
+//            AWTFontRenderer.Companion.garbageCollectionTick();
+//            callbackInfo.cancel();
+//        }
+//    }
 
     @Inject(method = "renderTooltip", at = @At("RETURN"))
     private void renderTooltipPost(ScaledResolution sr, float partialTicks, CallbackInfo callbackInfo) {

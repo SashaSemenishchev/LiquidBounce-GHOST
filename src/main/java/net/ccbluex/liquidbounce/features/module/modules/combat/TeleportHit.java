@@ -29,6 +29,11 @@ public class TeleportHit extends Module {
     private EntityLivingBase targetEntity;
     private boolean shouldHit;
 
+    @Override
+    public boolean isDangerous() {
+        return true;
+    }
+
     @EventTarget
     public void onMotion(MotionEvent event) {
         if (event.getEventState() != EventState.PRE)

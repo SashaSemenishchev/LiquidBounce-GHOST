@@ -5,6 +5,7 @@
  */
 package net.ccbluex.liquidbounce.injection.forge.mixins.gui;
 
+import net.ccbluex.liquidbounce.LiquidBounce;
 import net.ccbluex.liquidbounce.features.command.CommandManager;
 import net.ccbluex.liquidbounce.file.FileManager;
 import net.ccbluex.liquidbounce.utils.render.RenderUtils;
@@ -50,7 +51,7 @@ public abstract class MixinGuiChat extends MixinGuiScreen {
 
     @Inject(method = "keyTyped", at = @At("RETURN"))
     private void updateLength(CallbackInfo callbackInfo) {
-        if (!inputField.getText().startsWith(String.valueOf(CommandManager.INSTANCE.getPrefix()))) return;
+        if (!inputField.getText().startsWith(String.valueOf(CommandManager.INSTANCE.getPrefix())) || LiquidBounce.INSTANCE.isLocked()) return;
         CommandManager.INSTANCE.autoComplete(inputField.getText());
 
         if (!inputField.getText().startsWith(CommandManager.INSTANCE.getPrefix() + "lc"))

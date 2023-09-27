@@ -47,7 +47,7 @@ class ModuleElement(val module: Module) : ButtonElement(module.name, buttonActio
         when (mouseButton) {
             0 -> {
                 module.toggle()
-                clickGui.style.clickSound()
+//                clickGui.style.clickSound()
             }
             1 -> {
                 if (module.values.isNotEmpty()) {

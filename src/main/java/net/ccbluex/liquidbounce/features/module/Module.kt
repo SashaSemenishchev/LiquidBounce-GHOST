@@ -5,8 +5,12 @@
  */
 package net.ccbluex.liquidbounce.features.module
 
+import net.ccbluex.liquidbounce.LiquidBounce
 import net.ccbluex.liquidbounce.LiquidBounce.isStarting
 import net.ccbluex.liquidbounce.event.Listenable
+import net.ccbluex.liquidbounce.features.module.modules.misc.DangerousModBlocker
+import net.ccbluex.liquidbounce.features.module.modules.movement.Sprint
+import net.ccbluex.liquidbounce.features.module.modules.render.ClickGUI
 import net.ccbluex.liquidbounce.file.FileManager.modulesConfig
 import net.ccbluex.liquidbounce.file.FileManager.saveConfig
 import net.ccbluex.liquidbounce.lang.translation
@@ -17,8 +21,6 @@ import net.ccbluex.liquidbounce.utils.MinecraftInstance
 import net.ccbluex.liquidbounce.utils.extensions.toLowerCamelCase
 import net.ccbluex.liquidbounce.utils.misc.RandomUtils.nextFloat
 import net.ccbluex.liquidbounce.value.Value
-import net.minecraft.client.audio.PositionedSoundRecord
-import net.minecraft.util.ResourceLocation
 import org.lwjgl.input.Keyboard
 
 // TODO: Remove @JvmOverloads when all modules are ported to kotlin.
@@ -58,25 +60,45 @@ open class Module @JvmOverloads constructor(
         get() = forcedDescription ?: translation("module.${name.toLowerCamelCase()}.description")
 
     var slideStep = 0F
-
     // Current state of module
     var state = false
         set(value) {
             if (field == value)
                 return
-
+            if(value && DangerousModBlocker.state && isDangerous) {
+                addNotification(Notification("Blocked dangerous mod $name"))
+                return
+            }
+            if(LiquidBounce.hardLocked && this is ClickGUI) {
+                return
+            }
             // Call toggle
-            onToggle(value)
+            try {
+                onToggle(value)
+                field = false
+            } catch (e: Exception) {
+                e.printStackTrace()
+                addNotification(Notification("Failed to start ${getName()} due an error (onToggle())"))
+            }
+
 
             // Play sound and add notification
             if (!isStarting) {
-                mc.soundHandler.playSound(PositionedSoundRecord.create(ResourceLocation("random.click"), 1F))
+//                mc.soundHandler.playSound(PositionedSoundRecord.create(ResourceLocation("random.click"), 1F))
                 addNotification(Notification(translation("notification.module" + if (value) "Enabled" else "Disabled", getName())))
             }
 
             // Call on enabled or disabled
             if (value) {
-                onEnable()
+
+                try {
+                    onEnable()
+                    field = false
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    addNotification(Notification("Failed to start ${getName()} due an error (onEnable())"))
+                }
+
 
                 if (canBeEnabled)
                     field = true
@@ -93,6 +115,13 @@ open class Module @JvmOverloads constructor(
     // HUD
     val hue = nextFloat()
     var slide = 0F
+    open val isRenderDangerous = false
+    open val isDangerous: Boolean = false
+        get() {
+            if(category == ModuleCategory.EXPLOIT || category == ModuleCategory.WORLD) return true
+            if(category == ModuleCategory.MOVEMENT && this !is Sprint) return true
+            return field
+        }
 
     // Tag
     open val tag: String?

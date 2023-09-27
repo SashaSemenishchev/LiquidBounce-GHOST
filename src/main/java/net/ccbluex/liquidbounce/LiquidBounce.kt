@@ -7,7 +7,6 @@ package net.ccbluex.liquidbounce
 
 import net.ccbluex.liquidbounce.api.ClientUpdate.gitInfo
 import net.ccbluex.liquidbounce.api.loadSettings
-import net.ccbluex.liquidbounce.api.messageOfTheDay
 import net.ccbluex.liquidbounce.cape.CapeService
 import net.ccbluex.liquidbounce.event.ClientShutdownEvent
 import net.ccbluex.liquidbounce.event.EventManager
@@ -18,6 +17,7 @@ import net.ccbluex.liquidbounce.features.command.CommandManager
 import net.ccbluex.liquidbounce.features.command.CommandManager.registerCommands
 import net.ccbluex.liquidbounce.features.module.ModuleManager
 import net.ccbluex.liquidbounce.features.module.ModuleManager.registerModules
+import net.ccbluex.liquidbounce.features.module.modules.misc.RenderHider
 import net.ccbluex.liquidbounce.features.special.BungeeCordSpoof
 import net.ccbluex.liquidbounce.features.special.ClientFixes
 import net.ccbluex.liquidbounce.features.special.ClientRichPresence
@@ -46,6 +46,13 @@ import net.ccbluex.liquidbounce.utils.InventoryUtils
 import net.ccbluex.liquidbounce.utils.RotationUtils
 import net.ccbluex.liquidbounce.utils.TickedActions
 import net.ccbluex.liquidbounce.utils.render.MiniMapRegister
+import org.lwjgl.opengl.Display
+import org.lwjgl.opengl.DisplayMode
+import java.awt.Color
+import java.io.File
+import java.nio.file.Files
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 
 object LiquidBounce {
@@ -64,13 +71,20 @@ object LiquidBounce {
     val clientTitle = CLIENT_NAME + " " + clientVersionText + " " + clientCommit + "  | " + MINECRAFT_VERSION + if (IN_DEV) " | DEVELOPMENT BUILD" else ""
 
     var isStarting = true
+    val lockfile = File("clientlock")
+//    var isLocked: Boolean = true
+    val isLocked: Boolean
+        get() = RenderHider.state
 
+    var hardLocked: Boolean = false
+        get() = lockfile.exists()
     // Managers
     val moduleManager = ModuleManager
     val commandManager = CommandManager
     val eventManager = EventManager
     val fileManager = FileManager
     val scriptManager = ScriptManager
+    val executor = Executors.newSingleThreadScheduledExecutor()
 
     // HUD & ClickGUI
     val hud = HUD
@@ -82,15 +96,15 @@ object LiquidBounce {
 
     // Discord RPC
     val clientRichPresence = ClientRichPresence
+    val color = Color(0, 160, 255)
 
     /**
      * Execute if client will be started
      */
     fun startClient() {
         isStarting = true
-
-        LOGGER.info("Starting $CLIENT_NAME $clientVersionText $clientCommit, by $CLIENT_CREATOR")
-
+        checkLock()
+        info("Starting $CLIENT_NAME $clientVersionText $clientCommit, by $CLIENT_CREATOR [GHOST VERSION BY OLEK]")
         // Load languages
         loadLanguages()
 
@@ -108,7 +122,7 @@ object LiquidBounce {
 
         // Load settings
         loadSettings(false) {
-            LOGGER.info("Successfully loaded ${it.count()} settings.")
+            info("Successfully loaded ${it.count()} settings.")
         }
 
         // Register commands
@@ -125,7 +139,7 @@ object LiquidBounce {
             loadScripts()
             enableScripts()
         } catch (throwable: Throwable) {
-            LOGGER.error("Failed to load scripts.", throwable)
+            error("Failed to load scripts.", throwable)
         }
 
         // Load configs
@@ -138,7 +152,6 @@ object LiquidBounce {
         if (hasForge()) {
             BlocksTab()
             ExploitsTab()
-            HeadsTab()
         }
 
         // Disable optifine fastrender
@@ -147,49 +160,32 @@ object LiquidBounce {
         // Load alt generators
         loadActiveGenerators()
 
-        // Load message of the day
-        messageOfTheDay?.message?.let { LOGGER.info("Message of the day: $it") }
-
-        // Setup Discord RPC
-        if (showRichPresenceValue) {
-            thread {
-                try {
-                    clientRichPresence.setup()
-                } catch (throwable: Throwable) {
-                    LOGGER.error("Failed to setup Discord RPC.", throwable)
-                }
-            }
-        }
-
         // Login into known token if not empty
         if (CapeService.knownToken.isNotBlank()) {
             runCatching {
                 CapeService.login(CapeService.knownToken)
             }.onFailure {
-                LOGGER.error("Failed to login into known cape token.", it)
+                error("Failed to login into known cape token.", it)
             }.onSuccess {
-                LOGGER.info("Successfully logged in into known cape token.")
+                info("Successfully logged in into known cape token.")
             }
         }
 
         // Refresh cape service
         CapeService.refreshCapeCarriers {
-            LOGGER.info("Successfully loaded ${CapeService.capeCarriers.count()} cape carriers.")
-        }
-
-        // Load background
-        runCatching {
-            FileManager.loadBackground()
-        }.onFailure {
-            LOGGER.error("Failed to load background.", it)
-        }.onSuccess {
-            LOGGER.info("Successfully loaded background.")
+            info("Successfully loaded ${CapeService.capeCarriers.count()} cape carriers.")
         }
 
         // Set is starting status
         isStarting = false
 
         callEvent(StartupEvent())
+    }
+
+    fun checkLock(): Boolean {
+        val flag = File("clientlock").exists()
+        hardLocked = flag
+        return flag
     }
 
     /**
@@ -203,7 +199,20 @@ object LiquidBounce {
         saveAllConfigs()
 
         // Shutdown discord rpc
-        clientRichPresence.shutdown()
+//        clientRichPresence.shutdown()
     }
 
+    fun runLater(delay: Long, command: Runnable) {
+        executor.schedule(command, delay, TimeUnit.MILLISECONDS)
+    }
+
+    fun info(str: String) {
+        if(isLocked) return
+        LOGGER.info(str)
+    }
+
+    fun error(str: String, throwable: Throwable?=null) {
+        if(isLocked) return
+        LOGGER.error(str, throwable)
+    }
 }

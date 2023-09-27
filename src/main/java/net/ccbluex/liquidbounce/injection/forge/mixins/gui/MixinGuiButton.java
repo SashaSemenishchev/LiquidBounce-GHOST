@@ -5,6 +5,7 @@
  */
 package net.ccbluex.liquidbounce.injection.forge.mixins.gui;
 
+import net.ccbluex.liquidbounce.LiquidBounce;
 import net.ccbluex.liquidbounce.ui.font.AWTFontRenderer;
 import net.ccbluex.liquidbounce.ui.font.Fonts;
 import net.ccbluex.liquidbounce.utils.render.RenderUtils;
@@ -19,6 +20,9 @@ import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.awt.*;
 
@@ -64,8 +68,10 @@ public abstract class MixinGuiButton extends Gui {
    /**
     * @author CCBlueX
     */
-   @Overwrite
-   public void drawButton(Minecraft mc, int mouseX, int mouseY) {
+   @Inject(method = "drawButton", at = @At("HEAD"), cancellable = true)
+   public void onDrawButton(Minecraft mc, int mouseX, int mouseY, CallbackInfo ci) {
+      if(LiquidBounce.INSTANCE.isLocked()) return;
+      ci.cancel();
       if (visible) {
          hovered = (mouseX >= xPosition && mouseY >= yPosition &&
                     mouseX < xPosition + width && mouseY < yPosition + height);

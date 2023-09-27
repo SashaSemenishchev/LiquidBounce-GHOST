@@ -12,6 +12,7 @@ import net.minecraft.entity.Entity
 import net.minecraft.network.Packet
 import net.minecraft.util.AxisAlignedBB
 import net.minecraft.util.BlockPos
+import net.minecraft.util.DamageSource
 import net.minecraft.util.EnumFacing
 
 /**
@@ -20,6 +21,8 @@ import net.minecraft.util.EnumFacing
  * @param targetEntity Attacked entity
  */
 class AttackEvent(val targetEntity: Entity?) : Event()
+
+class DamageEvent(val source: DamageSource, val amount: Float) : Event()
 
 /**
  * Called when minecraft get bounding box of block
