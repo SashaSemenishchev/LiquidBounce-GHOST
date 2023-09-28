@@ -10,6 +10,8 @@ import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.Display
 import org.lwjgl.opengl.GL11
 import java.awt.Color
+import java.awt.Font
+import java.awt.font.FontRenderContext
 import java.awt.image.BufferedImage
 import java.io.OutputStream
 import java.nio.ByteBuffer
@@ -18,16 +20,19 @@ import java.util.concurrent.Executors
 import javax.vecmath.Vector2d
 import javax.vecmath.Vector2f
 import kotlin.math.min
+import kotlin.math.roundToInt
 
 object RenderHider : Module("RenderHider", ModuleCategory.MISC) {
     var window: RenderHiderWindow? = null
     override fun onEnable() {
         super.onEnable()
+        notificationFont = Fonts.font35.defaultFont.font.deriveFont(25f)
         window?.dispose()
         window = RenderHiderWindow().also {
             if(mc.theWorld == null) return@also
             it.isVisible = true
         }
+        notificationOffset = NOTIFICATION_OFFSET
     }
 
     override fun onDisable() {
@@ -41,34 +46,43 @@ object RenderHider : Module("RenderHider", ModuleCategory.MISC) {
         renderAllNotifications()
     }
 
-    private const val NOTIFICATION_OFFSET = 20
-    private var notificationOffset = 20
+    private const val NOTIFICATION_OFFSET = 40
+    private var notificationOffset = NOTIFICATION_OFFSET
     private val delegatedNotifications = mutableListOf<Notification>()
-
+    private val fontRenderContext = FontRenderContext(null, false, false)
+    private lateinit var notificationFont: Font
     private fun renderNotification(notification: Notification) {
         val window = window ?: return
-        val beginY = notificationOffset
+        val beginY = notification.delegatedY
         val g = window.graphics ?: return
-        g.color = notification.color
         val textStart = mc.displayWidth - notification.textLength
-        g.drawRect(textStart - 8, beginY, 8, NOTIFICATION_OFFSET)
+        g.color = notification.color
+        g.fillRect(textStart - 8, beginY, 8, NOTIFICATION_OFFSET)
         g.color = Color.BLACK
-        g.drawRect(textStart, beginY, notification.textLength, NOTIFICATION_OFFSET)
+        g.fillRect(textStart, beginY, notification.textLength, NOTIFICATION_OFFSET)
         g.color = Color.WHITE
-        g.font = Fonts.font35.defaultFont.font
-        g.drawString(notification.message, textStart, beginY)
-        notificationOffset += NOTIFICATION_OFFSET + 5
+        g.font = notificationFont
+        g.drawString(notification.message, textStart, beginY + (NOTIFICATION_OFFSET + notification.textHeight) / 2)
     }
 
     fun delegateNotification(notification: Notification) {
+        val bounds = notificationFont.getStringBounds(notification.message, fontRenderContext)
+        notification.textLength = bounds.width.roundToInt()
+        notification.textHeight = bounds.height.roundToInt()
+        notification.delegatedY = notificationOffset
         delegatedNotifications += notification
         notification.delegatedTimeSpent.reset()
         renderNotification(notification)
+        notificationOffset += NOTIFICATION_OFFSET + 5
+
     }
 
     fun renderAllNotifications() {
         delegatedNotifications.removeIf {
-            if (it.delegatedTimeSpent.hasTimePassed(1000)) return@removeIf true
+            if (it.delegatedTimeSpent.hasTimePassed(1000)) {
+                notificationOffset -= NOTIFICATION_OFFSET - 5
+                return@removeIf true
+            }
             renderNotification(it)
             return@removeIf false
         }

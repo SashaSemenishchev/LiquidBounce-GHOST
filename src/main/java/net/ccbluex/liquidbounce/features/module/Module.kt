@@ -22,6 +22,7 @@ import net.ccbluex.liquidbounce.utils.extensions.toLowerCamelCase
 import net.ccbluex.liquidbounce.utils.misc.RandomUtils.nextFloat
 import net.ccbluex.liquidbounce.value.Value
 import org.lwjgl.input.Keyboard
+import java.awt.Color
 
 // TODO: Remove @JvmOverloads when all modules are ported to kotlin.
 open class Module @JvmOverloads constructor(
@@ -66,7 +67,7 @@ open class Module @JvmOverloads constructor(
             if (field == value)
                 return
             if(value && DangerousModBlocker.state && isDangerous) {
-                addNotification(Notification("Blocked dangerous mod $name"))
+                addNotification(Notification("Blocked dangerous mod $name", true, Color.RED))
                 return
             }
             if(LiquidBounce.hardLocked && this is ClickGUI) {

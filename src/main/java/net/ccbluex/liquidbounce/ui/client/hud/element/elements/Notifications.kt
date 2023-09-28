@@ -61,6 +61,8 @@ class Notifications(x: Double = 0.0, y: Double = 30.0, scale: Float = 1F,
 class Notification(val message: String, private val okToShowWhenLocked: Boolean=false, val color: Color=LiquidBounce.color) {
     var x = 0F
     var textLength = 0
+    var textHeight = 0
+    var delegatedY = 0
 
     private var stay = 0F
     private var fadeStep = 0F
@@ -86,8 +88,8 @@ class Notification(val message: String, private val okToShowWhenLocked: Boolean=
             spectator.log(message)
         }
         if(!okToShowWhenLocked && LiquidBounce.isLocked) {
-            HUD.removeNotification(this)
             RenderHider.delegateNotification(this)
+            HUD.removeNotification(this)
             return
         }
         drawRect(-x + 8 + textLength, 0F, -x, -20F, Color.BLACK.rgb)

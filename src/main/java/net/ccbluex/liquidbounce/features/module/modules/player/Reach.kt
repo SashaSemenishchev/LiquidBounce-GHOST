@@ -18,6 +18,7 @@ import net.ccbluex.liquidbounce.value.FloatValue
 import net.minecraft.client.entity.EntityPlayerSP
 import net.minecraft.entity.player.EntityPlayer
 import net.minecraft.util.MathHelper
+import java.awt.Color
 import java.text.DecimalFormat
 import java.util.*
 import kotlin.math.PI
@@ -81,7 +82,8 @@ object Reach : Module("Reach", ModuleCategory.PLAYER) {
             if(attackingPlayer == null || distance < 3.0) return@execute
             HUD.addNotification(Notification(
                 "${attackingPlayer.name} hit you with ${DecimalFormat("#.##").format(distance)}",
-                true
+                true,
+                Color.RED
             ))
             if(distance > maxDistance) {
                 distance = maxDistance.toDouble()
@@ -109,7 +111,7 @@ object Reach : Module("Reach", ModuleCategory.PLAYER) {
         val toEyes = raytrace.hitVec.distanceTo(currentPlayer.getPositionEyes(1f))
         if (abs(toEyes - strictlyCalculated) > player.width / 2) {
             HUD.addNotification(Notification(
-                "${currentPlayer.name} maybe using HitBoxes", true
+                "${currentPlayer.name} maybe using HitBoxes", true, Color.RED
             ))
         }
         return toEyes
