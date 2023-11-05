@@ -25,6 +25,7 @@ public class MixinRenderEntityItem {
             glEnable(GL_POLYGON_OFFSET_FILL);
             glPolygonOffset(1f, -1000000F);
         }
+
     }
 
     @Inject(method = "doRender", at = @At("RETURN"))

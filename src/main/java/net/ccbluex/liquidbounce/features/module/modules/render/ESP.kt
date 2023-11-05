@@ -14,6 +14,7 @@ import net.ccbluex.liquidbounce.features.module.Module
 import net.ccbluex.liquidbounce.features.module.ModuleCategory
 import net.ccbluex.liquidbounce.features.module.modules.misc.AntiBot.isBot
 import net.ccbluex.liquidbounce.features.module.modules.misc.RenderHider
+import net.ccbluex.liquidbounce.features.module.modules.misc.Teams
 import net.ccbluex.liquidbounce.ui.client.hud.HUD
 import net.ccbluex.liquidbounce.ui.font.GameFontRenderer.Companion.getColorIndex
 import net.ccbluex.liquidbounce.utils.ClientUtils.LOGGER
@@ -34,6 +35,8 @@ import net.minecraft.client.renderer.GlStateManager.enableTexture2D
 import net.minecraft.entity.Entity
 import net.minecraft.entity.EntityLivingBase
 import net.minecraft.entity.player.EntityPlayer
+import net.minecraft.scoreboard.ScorePlayerTeam
+import net.minecraft.util.EnumChatFormatting
 import org.lwjgl.opengl.GL11.*
 import org.lwjgl.util.vector.Matrix4f
 import org.lwjgl.util.vector.Vector2f
@@ -73,6 +76,8 @@ object ESP : Module("ESP", ModuleCategory.RENDER) {
 //    val buff = BufferUtils.createByteBuffer(3)
 
     var renderNameTags = true
+    var invisState = false
+
     @EventTarget
     fun onRender3D(event: Render3DEvent) {
         val mode = mode
@@ -128,7 +133,24 @@ object ESP : Module("ESP", ModuleCategory.RENDER) {
                         if (minX > 0 || minY > 0 || maxX <= mc.displayWidth || maxY <= mc.displayWidth) {
                             RenderHider.window?.let {
                                 val graphics = it.graphics ?: return@let
-                                graphics.color = Color.WHITE
+
+                                // gets HEX colour of assigned player's team otherwise sets it to white
+//                                val color: Color = Color.WHITE
+                                if(entity is EntityPlayer) {
+                                    if(entity.isInvisibleToPlayer(mc.thePlayer)) {
+                                        invisState = !invisState
+                                        graphics.color = if(invisState) Color.RED else Color.WHITE
+                                        graphics.drawLine(minX, minY + 3, maxX, minY + 3)
+                                    }
+//                                    Color(
+//                                        ColorUtils.hexColors[
+//                                                (entity.displayName.chatStyle.color ?: EnumChatFormatting.WHITE)
+//                                                    .colorIndex
+//                                        ]
+//                                    )
+                                }
+
+                                graphics.color = color
                                 graphics.drawLine(minX, minY, minX, maxY)
                                 graphics.drawLine(maxX, maxY, maxX, minY)
                                 graphics.drawLine(minX, maxY, maxX, maxY)

@@ -113,7 +113,7 @@ class Notification(val message: String, private val okToShowWhenLocked: Boolean=
                     fadeStep = width
                 }
 
-                stay = 60F
+                stay = 120F
             }
 
             FadeState.STAY -> if (stay > 0)

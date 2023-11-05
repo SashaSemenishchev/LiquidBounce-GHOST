@@ -5,15 +5,22 @@
  */
 package net.ccbluex.liquidbounce.injection.forge.mixins.entity;
 
+import net.ccbluex.liquidbounce.LiquidBounce;
 import net.ccbluex.liquidbounce.event.EventManager;
 import net.ccbluex.liquidbounce.event.StrafeEvent;
 import net.ccbluex.liquidbounce.features.module.modules.combat.HitBox;
 import net.ccbluex.liquidbounce.features.module.modules.exploit.NoPitchLimit;
+import net.ccbluex.liquidbounce.features.module.modules.misc.AntiBot;
+import net.ccbluex.liquidbounce.features.module.modules.misc.Spectator;
 import net.ccbluex.liquidbounce.features.module.modules.movement.NoFluid;
+import net.ccbluex.liquidbounce.ui.client.hud.HUD;
+import net.ccbluex.liquidbounce.ui.client.hud.element.elements.Notification;
+import net.ccbluex.liquidbounce.utils.EntityUtils;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.crash.CrashReportCategory;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.Vec3;
@@ -27,6 +34,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import java.awt.*;
 import java.util.Random;
 import java.util.UUID;
 
@@ -228,5 +236,15 @@ public abstract class MixinEntity {
         if (NoFluid.INSTANCE.getState() && NoFluid.INSTANCE.getLava()) {
             cir.setReturnValue(false);
         }
+    }
+
+    @Inject(method = "setInvisible", at = @At("RETURN"))
+    public void injectInvisCheck(boolean p_setInvisible_1_, CallbackInfo ci) {
+        if(!Spectator.INSTANCE.getState()) return;
+        if(!((Object) this instanceof EntityPlayer)) return;
+        EntityPlayer invised = (EntityPlayer) (Object) this;
+        if(invised == mc.thePlayer) return;
+        if(AntiBot.INSTANCE.isBot(invised) || !EntityUtils.INSTANCE.isSelected(invised, true)) return;
+        HUD.INSTANCE.addNotification(new Notification(invised.getName() + " invised: " + Math.round(invised.getDistanceToEntity(mc.thePlayer)) + "blocks from you", false, Color.CYAN));
     }
 }

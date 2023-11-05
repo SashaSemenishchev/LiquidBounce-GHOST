@@ -13,11 +13,16 @@ import javax.vecmath.Vector2f
 data class Vec2i(val x: Int, val y: Int)
 
 class RenderHiderWindow : JFrame("Overlay") {
-    val mc = Minecraft.getMinecraft()
+    val mc: Minecraft = Minecraft.getMinecraft()
 
     init {
         setLocationRelativeTo(null)
-        setLocation(Display.getX(), Display.getY())
+        if(Display.isFullscreen()) {
+            setLocation(0, 0)
+        } else {
+            setLocation(Display.getX(), Display.getY() + 20)
+        }
+
         isAlwaysOnTop = true
         size = Dimension(100, 100)
         isUndecorated = true
@@ -31,6 +36,11 @@ class RenderHiderWindow : JFrame("Overlay") {
     fun drawAgain() {
         isVisible = true
         size = Dimension(mc.displayWidth, mc.displayHeight - 100)
+        if(Display.isFullscreen()) {
+            setLocation(0, 0)
+        } else {
+            setLocation(Display.getX(), Display.getY() + 20)
+        }
     }
 
     fun unDraw() {

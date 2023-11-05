@@ -57,6 +57,7 @@ object ModuleManager : Listenable {
             AbortBreaking,
             Aimbot,
 //            AimAssist,
+            NoHitDelay,
             AirJump,
             DangerousModBlocker,
             AirLadder,

@@ -23,6 +23,7 @@ import net.ccbluex.liquidbounce.utils.timer.MSTimer
 import net.ccbluex.liquidbounce.value.BoolValue
 import net.ccbluex.liquidbounce.value.FloatValue
 import net.ccbluex.liquidbounce.value.IntegerValue
+import net.minecraft.init.Blocks
 import net.minecraft.util.MovingObjectPosition
 import java.util.*
 
@@ -44,6 +45,11 @@ object Aimbot : Module("Aimbot", ModuleCategory.COMBAT) {
     fun onMotion(event: MotionEvent) {
         if (event.eventState != EventState.POST) {
             return
+        }
+
+        val blockPos = mc.objectMouseOver.blockPos
+        if(blockPos != null) {
+            if(mc.theWorld.getBlockState(blockPos).block == Blocks.bed) return
         }
 
         // Clicking delay
